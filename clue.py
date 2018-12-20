@@ -105,7 +105,9 @@ def base_to_zero(nums):
 def all_query(nums):
     """ change the indices of a query to index into ALLCARDS """
     s, w, r = nums
-    return [ALLCARDS.index(SUSPECTS[s-1]), ALLCARDS.index(WEAPONS[w-1]), ALLCARDS.index(ROOMS[r-1])]
+    return [ALLCARDS.index(SUSPECTS[s-1]),
+            ALLCARDS.index(WEAPONS[w-1]),
+            ALLCARDS.index(ROOMS[r-1])]
 
 
 def text_query(nums):
@@ -125,25 +127,26 @@ def get_responders(players, suggester):
 
 
 def pause(msg=None):
-    if msg: print(msg)
+    if msg:
+        print(msg)
     input("Press <Enter> to continue...")
 
 
 def abort_suggestion(message):
     print("The current suggestion was aborted."
-            + "Cause: " + message if message else "")
+          + "Cause: " + message if message else "")
     pause()
 
 
 def abort_add_player(message):
     print("Adding the player was aborted."
-            + "Cause: " + message if message else "")
+          + "Cause: " + message if message else "")
     pause()
 
 
 def abort_delete_player(message):
     print("Deleting the player was aborted."
-            + "Cause: " + message if message else "")
+          + "Cause: " + message if message else "")
     pause()
 
 
@@ -205,7 +208,8 @@ def get_response_cpu_suggested(query):
     print_all_cards()
     print(query)
     cnum = get_int("Enter card shown or 'n' if none", allow_n=True)
-    if cnum == False: return False
+    if cnum == False:
+        return False
     if cnum < 1 or cnum > len(ALLCARDS):
         abort_suggestion("Invalid card number")
         return None
@@ -216,7 +220,8 @@ def confirm_response_cpu_suggested(card, pname):
     if card == False:
         confirm = get_bool("{} did not show a card. OK?".format(pname))
     else:
-        confirm = get_bool("{} showed {}.  OK?".format(pname, ALLCARDS[card-1]))
+        confirm = get_bool(
+            "{} showed {}.  OK?".format(pname, ALLCARDS[card-1]))
     if not confirm:
         abort_suggestion("User cancelled")
     return confirm
@@ -229,8 +234,8 @@ def get_response_other_suggested(query):
 
 
 def confirm_response_other_suggested(resp, pname):
-    confirm = get_bool("{} {} a card. OK?" \
-            .format(pname, 'showed' if resp else 'did not show'))
+    confirm = get_bool("{} {} a card. OK?"
+                       .format(pname, 'showed' if resp else 'did not show'))
     if not confirm:
         abort_suggestion("User cancelled")
     return confirm
@@ -241,12 +246,15 @@ def add_suggestion(players):
         along with the responses of the other players
     """
     suggester = get_suggester(players)
-    if not suggester: return
-    if not confirm_suggester(suggester): return
+    if not suggester:
+        return
+    if not confirm_suggester(suggester):
+        return
 
     numlist, numquery = get_suggestion()
     query = text_query(numlist)
-    if not confirm_suggestion(query): return
+    if not confirm_suggestion(query):
+        return
 
     responders = get_responders(players, suggester)
     for player in responders:
@@ -266,7 +274,8 @@ def add_suggestion(players):
                 elif card > 0:
                     player.update_for_card(card-1)
                     break
-                else: return
+                else:
+                    return
             else:
                 resp = get_response_other_suggested(query)
                 # if not confirm_response_other_suggested(resp, player.name):
@@ -289,7 +298,7 @@ def get_player(players):
 
 def confirm_player(name, ncards, is_cpu):
     confirm = get_bool("Player is {}, {} cards, {}. OK?"
-                        .format(name, ncards, "CPU" if is_cpu else "not CPU"))
+                       .format(name, ncards, "CPU" if is_cpu else "not CPU"))
     if not confirm:
         abort_add_player("User cancelled")
     return confirm
@@ -302,22 +311,25 @@ def get_cpu_player_cards(ncards):
         return None
     return result
 
+
 def confirm_cpu_player_cards(cards):
-    knowns=[ALLCARDS[i-1] for i in cards]
-    confirm=get_bool("Cards {}. OK?".format(knowns))
+    knowns = [ALLCARDS[i-1] for i in cards]
+    confirm = get_bool("Cards {}. OK?".format(knowns))
     if not confirm:
         abort_add_player("User cancelled")
     return confirm
 
+
 def add_player(players):
     """ add a player to the game """
-    name, ncards, is_cpu=get_player(players)
+    name, ncards, is_cpu = get_player(players)
     if not confirm_player(name, ncards, is_cpu):
         return
-    knowns=None
+    knowns = None
     if is_cpu:
         cards = get_cpu_player_cards(ncards)
-        if not cards: return
+        if not cards:
+            return
         if not confirm_cpu_player_cards(cards):
             return
         players.append(Player(name, ncards, is_cpu, base_to_zero(cards)))
@@ -330,7 +342,7 @@ def add_player(players):
 
 def delete_player(players):
     """ delete a player """
-    confirm=get_bool("Are you sure you want to delete player {}"
+    confirm = get_bool("Are you sure you want to delete player {}"
                        .format(current_player.name))
     if not confirm:
         abort_delete_player("User cancelled")
@@ -343,6 +355,7 @@ def delete_player(players):
 # ----------------------------------------
 # Info about solutions and player's hands
 # ----------------------------------------
+
 
 def print_definite_solution(players):
     print(definite_solution(players))
@@ -364,7 +377,7 @@ def print_player_possibles(players):
 
 def definite_solution(players):
     """ The solution to the game """
-    defs=definite_solution_nums(players)
+    defs = definite_solution_nums(players)
     return [ALLCARDS[c] for c in defs]
 
 
@@ -377,38 +390,38 @@ def likely_solution(players):
     """ Return tuples of cards with the
         number of players who don't have them
     """
-    likes=likely_solution_nums(players)
-    return sorted([(ALLCARDS[n], ct) for n, ct in likes], \
-            key=lambda tp: tp[1], reverse=True)
+    likes = likely_solution_nums(players)
+    return sorted([(ALLCARDS[n], ct) for n, ct in likes],
+                  key=lambda tp: tp[1], reverse=True)
 
 
 def definite_solution_nums(players):
-    nset = set() 
-    none=[p.hand.neg_elements() for p in players]
+    nset = set()
+    none = [p.hand.neg_elements() for p in players]
     if none:
-        nset=none[0]
+        nset = none[0]
         for s in none:
-            nset=nset.intersection(s)
+            nset = nset.intersection(s)
     return nset
 
 
 def likely_solution_nums(players):
-    not_in_hand=[p.hand.neg_elements() for p in players]
-    d={}
+    not_in_hand = [p.hand.neg_elements() for p in players]
+    d = {}
     for sub in not_in_hand:
         for n in sub:
             d.setdefault(n, []).append(n)
-    knowns=[list(p.hand.pos_elements()) for p in players]
-    flat=set(n for sub in knowns for n in sub)
+    knowns = [list(p.hand.pos_elements()) for p in players]
+    flat = set(n for sub in knowns for n in sub)
     for n in flat:
-        if n in d: d.pop(n)
+        if n in d:
+            d.pop(n)
     return [(k, len(v)) for k, v in d.items()]
 
 
-
 def possible_solution_nums(players):
-    knowns=[list(p.hand.pos_elements()) for p in players]
-    knowns=set(k for lst in knowns for k in lst)
+    knowns = [list(p.hand.pos_elements()) for p in players]
+    knowns = set(k for lst in knowns for k in lst)
     return allcardset() - knowns
 
 
@@ -425,24 +438,24 @@ def player_hands(players):
 
 
 def set_main_options(players):
-    m_main.title="Clue"
-    m_main.options=[]
+    m_main.title = "Clue"
+    m_main.options = []
     m_main.add_option("Quit", m_main.close)
     if players:
         m_main.add_option("Add Suggestion", lambda: add_suggestion(players))
         m_main.add_option("Sync Players", lambda: sync_players(players))
         m_main.add_option("Player hands", lambda: player_hands(players))
         m_main.add_option("Player possibles",
-                      lambda: print_player_possibles(players))
+                          lambda: print_player_possibles(players))
         m_main.add_option("Likely solution cards",
-                      lambda: print_likely_solution(players))
+                          lambda: print_likely_solution(players))
         m_main.add_option("Definite solution cards",
-                      lambda: print_definite_solution(players))
+                          lambda: print_definite_solution(players))
     m_main.add_option("Manage Players", m_player.open)
 
 
 def set_player_options(players):
-    m_player.options=[]
+    m_player.options = []
     m_player.add_option("Return to Main Menu", m_player.close)
     m_player.add_option("Add Player", lambda: add_player(players))
     for player in players:
@@ -451,7 +464,7 @@ def set_player_options(players):
 
 
 def set_player_del_options(players):
-    m_player_del.options=[]
+    m_player_del.options = []
     m_player_del.add_option("Return to Player List",
                             m_player_del.close)
     m_player_del.add_option("Delete", lambda: delete_player(players))
@@ -459,7 +472,7 @@ def set_player_del_options(players):
 
 def set_player_open_del(player):
     global current_player
-    current_player=player
+    current_player = player
     print(player.name)
     m_player_del.open()
 
@@ -467,20 +480,20 @@ def set_player_open_del(player):
 # -------------
 # Main Program
 # -------------
-SUSPECTS=['Colonel Mustard', 'Mr. Green', 'Professor Plum',
+SUSPECTS = ['Colonel Mustard', 'Mr. Green', 'Professor Plum',
             'Miss Scarlet', 'Ms White', 'Mrs. Peacock']
-WEAPONS=['lead pipe', 'candlestick', 'rope', 'knife',
+WEAPONS = ['lead pipe', 'candlestick', 'rope', 'knife',
            'wrench', 'pistol']
-ROOMS=['hall', 'conservatory', 'library', 'dining room',
+ROOMS = ['hall', 'conservatory', 'library', 'dining room',
          'kitchen', 'billiard room', 'study', 'lounge', 'ball room']
-ALLCARDS=SUSPECTS + WEAPONS + ROOMS
+ALLCARDS = SUSPECTS + WEAPONS + ROOMS
 
 if __name__ == '__main__':
     players = []
-    current_player=None
-    m_main=Menu(title="Main Menu")
-    m_player=Menu(title="Manage Players")
-    m_player_del=Menu(title="Edit/Delete Player")
+    current_player = None
+    m_main = Menu(title="Main Menu")
+    m_player = Menu(title="Manage Players")
+    m_player_del = Menu(title="Edit/Delete Player")
     set_main_options(players)
     set_player_options(players)
     set_player_del_options(players)
