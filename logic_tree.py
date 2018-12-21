@@ -58,11 +58,11 @@ class tree:
         """
         yes = {a.num for a in branch if a.bval}
         no = {a.num for a in branch if not a.bval}
-        return len(yes & no)
+        return yes & no
 
     def prune(self):
         """ remove any branches with contradictions """
-        self.branches = [b for b in self.branches if self.contr(b) == 0]
+        self.branches = [b for b in self.branches if not self.contr(b)]
 
     def clean(self):
         """ remove duplicates from branches
@@ -100,7 +100,7 @@ class tree:
         """
         if not self.branches: return []
         ce = self.common_elements()
-        diff = [b - ce for b in self.branches_as_sets() if len(b - ce) > 0]
+        diff = [b - ce for b in self.branches_as_sets() if b - ce]
         return sorted([sorted([a.num for a in sub]) for sub in diff])
 
     def simple(self):
@@ -121,4 +121,4 @@ class tree:
         """ compare the positive common atoms with the given list 
             to see if any are included
         """
-        return len(self.pos_elements() & set(nums)) > 0
+        return self.pos_elements() & set(nums)
