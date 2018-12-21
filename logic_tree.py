@@ -29,26 +29,23 @@ class tree:
     def __init__(self):
         self.branches = []
 
-    def branches_as_sets(self):
-        return [set(b) for b in self.branches]
-
     def add_pos(self, query):
         """ add a query (tuple) positively to the tree.  This adds a branch
             for each disjunction, intentionally creating duplicate 
             references to atoms.
         """
-        self.branches = [b + [atom(q, True)]
+        self.branches = [b | set((atom(q, True),))
                              for b in self.branches for q in query] \
-                        if self.branches else [[atom(q, True)] for q in query]
+                        if self.branches else [set((atom(q, True),)) for q in query]
         self.prune()
         self.clean()
 
     def add_neg(self, query):
         """ add a query (tuple) negatively to the tree
         """
-        qlist = [atom(q, False) for q in query]
-        self.branches = [b + qlist for b in self.branches] \
-                        if self.branches else [qlist]
+        qset = set(atom(q, False) for q in query)
+        self.branches = [b | qset for b in self.branches] \
+                        if self.branches else [qset]
         self.prune()
         self.clean()
 
@@ -69,8 +66,8 @@ class tree:
             exclude any branch that is a subset of another branch 
             and sort atoms in branches by number
         """
-        lst = [set(b) for b in set([tuple(set(b)) for b in self.branches])]
-        newlst = []
+        lst = [set(b) for b in set([tuple(b) for b in self.branches])]
+        self.branches = []
         for i in range(len(lst)):
             exclude = False
             for j in range(len(lst)):
@@ -78,8 +75,7 @@ class tree:
                     exclude = True
                     break
             if not exclude:
-                newlst.append(lst[i])
-        self.branches = [sorted(list(b), key=lambda a: a.num) for b in newlst]
+                self.branches.append(lst[i])
 
     #---------------------------
     # Information about the tree
@@ -87,12 +83,11 @@ class tree:
 
     def print(self):
         for b in self.branches:
-            print(b)
+            print(sorted(list(b), key=lambda b: b.num))
 
     def common_elements(self):
         """ get a set of the atoms common to each branch """
-        return set.intersection(*self.branches_as_sets()) \
-                if self.branches else {}
+        return set.intersection(*self.branches) if self.branches else {}
 
     def possibles(self):
         """ get a nested list representing the disjuctive part of the tree 
@@ -100,7 +95,7 @@ class tree:
         """
         if not self.branches: return []
         ce = self.common_elements()
-        diff = [b - ce for b in self.branches_as_sets() if b - ce]
+        diff = [b - ce for b in self.branches if b - ce]
         return sorted([sorted([a.num for a in sub]) for sub in diff])
 
     def simple(self):
@@ -111,11 +106,11 @@ class tree:
 
     def pos_elements(self):
         """ the common atoms with bval True """
-        return set([a.num for a in self.common_elements() if a.bval])
+        return {a.num for a in self.common_elements() if a.bval}
 
     def neg_elements(self):
         """ the common atoms with bval False """
-        return set([a.num for a in self.common_elements() if not a.bval])
+        return {a.num for a in self.common_elements() if not a.bval}
 
     def contains_any(self, nums):
         """ compare the positive common atoms with the given list 
