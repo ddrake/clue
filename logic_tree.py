@@ -22,7 +22,7 @@ class atom:
 
 class tree:
     """ A logic tree customized for use by the clue solver.
-        It is implemented as a list of lists, where each list 
+        It is implemented as a list of sets, where each sets 
         represents a branch of a tree
     """
 
@@ -64,7 +64,6 @@ class tree:
     def clean(self):
         """ remove duplicates from branches
             exclude any branch that is a subset of another branch 
-            and sort atoms in branches by number
         """
         lst = [set(b) for b in set([tuple(b) for b in self.branches])]
         self.branches = []
@@ -92,6 +91,7 @@ class tree:
     def possibles(self):
         """ get a nested list representing the disjuctive part of the tree 
             bvals are not included since they will always be True
+            inner and outer lists are sorted in ascending order
         """
         if not self.branches: return []
         ce = self.common_elements()
@@ -113,7 +113,7 @@ class tree:
         return {a.num for a in self.common_elements() if not a.bval}
 
     def contains_any(self, nums):
-        """ compare the positive common atoms with the given list 
+        """ compare the positive common atoms with the given enumerable 
             to see if any are included
         """
         return self.pos_elements() & set(nums)
