@@ -21,92 +21,48 @@ class atom:
 
 
 class tree:
-    """ a logic tree customized for use by the clue solver
-        it is implemented as a list of lists, where each list 
+    """ A logic tree customized for use by the clue solver.
+        It is implemented as a list of lists, where each list 
         represents a branch of a tree
     """
 
     def __init__(self):
         self.branches = []
 
+    def branches_as_sets(self):
+        return [set(b) for b in self.branches]
+
     def add_pos(self, query):
-        """ add a query (tuple) positively to the tree.  This adds branches
-            intentionally creating duplicate references to atoms.
+        """ add a query (tuple) positively to the tree.  This adds a branch
+            for each disjunction, intentionally creating duplicate 
+            references to atoms.
         """
-        if self.branches:
-            self.branches = [b + [atom(q, True)]
-                             for b in self.branches for q in query]
-        else:
-            for q in query:
-                self.branches.append([atom(q, True)])
+        self.branches = [b + [atom(q, True)]
+                             for b in self.branches for q in query] \
+                        if self.branches else [[atom(q, True)] for q in query]
         self.prune()
         self.clean()
 
     def add_neg(self, query):
         """ add a query (tuple) negatively to the tree
         """
-        qlst = [atom(q, False) for q in query]
-        if self.branches:
-            for b in self.branches:
-                for q in qlst:
-                    b.append(q)
-        else:
-            self.branches.append(qlst)
+        qlist = [atom(q, False) for q in query]
+        self.branches = [b + qlist for b in self.branches] \
+                        if self.branches else [qlist]
         self.prune()
         self.clean()
 
-    def test(self, branch):
+    def contr(self, branch):
         """ check if a branch contains logical contradictions and
             so can be deleted.
         """
-        yes = set()
-        no = set()
-        for a in branch:
-            if a.bval:
-                yes.add(a.num)
-            else:
-                no.add(a.num)
+        yes = {a.num for a in branch if a.bval}
+        no = {a.num for a in branch if not a.bval}
         return len(yes & no)
 
     def prune(self):
         """ remove any branches with contradictions """
-        self.branches = [b for b in self.branches if self.test(b) == 0]
-
-    def print(self):
-        for b in self.branches:
-            print(b)
-
-    def common_elements(self):
-        """ get a list of the atoms common to each branch """
-        if not self.branches:
-            return {}
-        else:
-            lst = [set(b) for b in self.branches]
-            isect = lst[0]
-            for b in lst:
-                isect = isect & b
-            return isect
-
-    def possibles(self):
-        """ get a nested list representing the disjuctive part of the tree """
-        if not self.branches:
-            return []
-        lst = [set(b) for b in self.branches]
-        isect = self.common_elements()
-        lst = [sorted(list(b-isect), key=lambda a: a.num)
-               for b in lst if len(b-isect) > 0]
-        return [[l.num for l in sub] for sub in lst]
-
-    def simple(self):
-        """ return a simple representation of the tree """
-        if not self.branches:
-            return self.branches
-        lst = [set(b) for b in self.branches]
-        isect = self.common_elements()
-        difflst = [sorted(list(b-isect), key=lambda a: a.num)
-                   for b in lst if len(b-isect) > 0]
-        blst = sorted(list(isect), key=lambda a: a.num)
-        return blst + difflst
+        self.branches = [b for b in self.branches if self.contr(b) == 0]
 
     def clean(self):
         """ remove duplicates from branches
@@ -114,20 +70,44 @@ class tree:
             and sort atoms in branches by number
         """
         lst = [set(b) for b in set([tuple(set(b)) for b in self.branches])]
-        lenlst = len(lst)
         newlst = []
-        for i in range(lenlst):
+        for i in range(len(lst)):
             exclude = False
-            for j in range(lenlst):
-                if j == i:
-                    continue
-                if lst[i].issubset(lst[j]):
+            for j in range(len(lst)):
+                if lst[i] < lst[j]:
                     exclude = True
                     break
             if not exclude:
                 newlst.append(lst[i])
-        newlst = [sorted(list(b), key=lambda a: a.num) for b in newlst]
-        self.branches = newlst
+        self.branches = [sorted(list(b), key=lambda a: a.num) for b in newlst]
+
+    #---------------------------
+    # Information about the tree
+    #---------------------------
+
+    def print(self):
+        for b in self.branches:
+            print(b)
+
+    def common_elements(self):
+        """ get a set of the atoms common to each branch """
+        return set.intersection(*self.branches_as_sets()) \
+                if self.branches else {}
+
+    def possibles(self):
+        """ get a nested list representing the disjuctive part of the tree 
+            bvals are not included since they will always be True
+        """
+        if not self.branches: return []
+        ce = self.common_elements()
+        diff = [b - ce for b in self.branches_as_sets() if len(b - ce) > 0]
+        return sorted([sorted([a.num for a in sub]) for sub in diff])
+
+    def simple(self):
+        """ return a simple representation of the tree """
+        return sorted(list(self.common_elements()), 
+                key=lambda a: a.num) + self.possibles() \
+                if self.branches else []
 
     def pos_elements(self):
         """ the common atoms with bval True """
