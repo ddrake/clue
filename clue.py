@@ -1,5 +1,6 @@
 from logic_tree import *
 from menu import Menu
+import pickle
 
 
 class Player:
@@ -431,7 +432,18 @@ def player_hands(players):
         print()
     pause()
 
+def save_players(players):
+    with open('clue.pkl', 'wb') as f:
+        pickle.dump(players, f)
+        pause('Saved to file')
 
+def load_players():
+    with open('clue.pkl', 'rb') as f:
+        players = pickle.load(f)
+        set_player_options(players)
+        set_main_options(players)
+        m_player_del.close()
+        pause('Loaded from file')
 # ----------
 # Menu Setup
 # ----------
@@ -441,6 +453,8 @@ def set_main_options(players):
     m_main.title = "Clue"
     m_main.options = []
     m_main.add_option("Quit", m_main.close)
+    m_main.add_option("Save", lambda: save_players(players))
+    m_main.add_option("Load", lambda: load_players())
     if players:
         m_main.add_option("Add Suggestion", lambda: add_suggestion(players))
         m_main.add_option("Sync Players", lambda: sync_players(players))
