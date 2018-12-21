@@ -21,7 +21,7 @@ def test_solve1():
         for r in responders:
             idx = players.index(r)
             hand = true_hands[idx]
-            isect = qset.intersection(hand)
+            isect = qset & hand
             if len(isect) == 0:
                 r.update_for_no(qset)
             else:
@@ -60,7 +60,7 @@ def test_solve2():
         for r in responders:
             idx = players.index(r)
             hand = true_hands[idx]
-            isect = qset.intersection(hand)
+            isect = qset & hand
             if len(isect) == 0:
                 r.update_for_no(qset)
             else:

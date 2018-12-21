@@ -66,7 +66,7 @@ class tree:
                 yes.add(a.num)
             else:
                 no.add(a.num)
-        return len(yes.intersection(no))
+        return len(yes & no)
 
     def prune(self):
         """ remove any branches with contradictions """
@@ -84,7 +84,7 @@ class tree:
             lst = [set(b) for b in self.branches]
             isect = lst[0]
             for b in lst:
-                isect = isect.intersection(b)
+                isect = isect & b
             return isect
 
     def possibles(self):
@@ -141,4 +141,4 @@ class tree:
         """ compare the positive common atoms with the given list 
             to see if any are included
         """
-        return len(set(nums).intersection(self.pos_elements())) > 0
+        return len(self.pos_elements() & set(nums)) > 0

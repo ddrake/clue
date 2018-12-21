@@ -401,7 +401,7 @@ def definite_solution_nums(players):
     if none:
         nset = none[0]
         for s in none:
-            nset = nset.intersection(s)
+            nset = nset & s
     return nset
 
 
