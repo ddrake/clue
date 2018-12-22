@@ -1,6 +1,5 @@
 class atom:
-    """
-    a number with an associated boolean value
+    """ Represents an integer with an associated boolean value
     """
 
     def __init__(self, num, bval):
@@ -22,7 +21,7 @@ class atom:
 
 class tree:
     """ A logic tree customized for use by the clue solver.
-        It is implemented as a list of sets, where each sets 
+        It is implemented as a list of sets, where each set
         represents a branch of a tree
     """
 
@@ -30,9 +29,9 @@ class tree:
         self.branches = []
 
     def add_pos(self, query):
-        """ add a query (tuple) positively to the tree.  This adds a branch
-            for each disjunction, intentionally creating duplicate 
-            references to atoms.
+        """ Add a query (tuple) positively to the tree.  This results in
+            a copy of each existing branch for each atom in the disjunction.
+            Multiple references to a given atom are created in the process.
         """
         self.branches = [b | set((atom(q, True),))
                              for b in self.branches for q in query] \
@@ -41,7 +40,9 @@ class tree:
         self.clean()
 
     def add_neg(self, query):
-        """ add a query (tuple) negatively to the tree
+        """ Add a query (tuple) negatively to the tree.  A chain of negative
+            atoms is created for the conjunction.  It is then and unioned 
+            with each existing branch.
         """
         qset = set(atom(q, False) for q in query)
         self.branches = [b | qset for b in self.branches] \
@@ -50,8 +51,8 @@ class tree:
         self.clean()
 
     def contr(self, branch):
-        """ check if a branch contains logical contradictions and
-            so can be deleted.
+        """ Check if a branch contains one or more logical contradictions.
+            If so, the branch can be deleted from the tree.
         """
         yes = {a.num for a in branch if a.bval}
         no = {a.num for a in branch if not a.bval}
@@ -62,8 +63,8 @@ class tree:
         self.branches = [b for b in self.branches if not self.contr(b)]
 
     def clean(self):
-        """ remove duplicates from branches
-            exclude any branch that is a subset of another branch 
+        """ Remove duplicate branches.  Then remove any branch 
+            that is a proper subset of another branch. 
         """
         lst = [set(b) for b in set([tuple(b) for b in self.branches])]
         self.branches = []
