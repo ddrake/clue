@@ -52,10 +52,14 @@ def inp():
     return input("> ")
 
 
-def get_bool(prompt):
-    print(prompt + ' (y/n)')
+def get_bool(prompt, default=None):
+    deftext = ' Y|n' if default == True \
+        else ' y|N' if default==False else ' y|n'
+    print(prompt + deftext)
     resp = inp()
-    return True if resp.upper() == 'Y' else False if resp.upper() == 'N' else None
+    return True if resp.upper() == 'Y' or default==True \
+        else False if resp.upper() == 'N' or default==False \
+        else None
 
 
 def get_string(prompt):
@@ -171,6 +175,9 @@ def print_all_cards():
     for i, c in enumerate(ALLCARDS):
         print(i+1, c)
 
+def print_query_cards(query):
+    for c in query:
+        print(c+1, ALLCARDS[c])
 
 def get_suggester(players):
     for i, p in enumerate(players):
@@ -185,7 +192,8 @@ def get_suggester(players):
 
 
 def confirm_suggester(suggester):
-    confirm = get_bool("Suggester is {}. OK?".format(suggester.name))
+    confirm = get_bool("Suggester is {}. OK?".format(suggester.name), 
+            default=True)
     if not confirm:
         abort_suggestion("User cancelled")
     return confirm
@@ -199,15 +207,14 @@ def get_suggestion():
 
 
 def confirm_suggestion(query):
-    confirm = get_bool("Suggestion is {}. OK?".format(query))
+    confirm = get_bool("Suggestion is {}. OK?".format(query), default=True)
     if not confirm:
         abort_suggestion("User cancelled")
     return confirm
 
 
-def get_response_cpu_suggested(query):
-    print_all_cards()
-    print(query)
+def get_response_cpu_suggested(numquery):
+    print_query_cards(numquery)
     cnum = get_int("Enter card shown or 'n' if none", allow_n=True)
     if cnum == False:
         return False
@@ -219,10 +226,12 @@ def get_response_cpu_suggested(query):
 
 def confirm_response_cpu_suggested(card, pname):
     if card == False:
-        confirm = get_bool("{} did not show a card. OK?".format(pname))
+        confirm = get_bool("{} did not show a card. OK?".format(pname), 
+                default=True)
     else:
         confirm = get_bool(
-            "{} showed {}.  OK?".format(pname, ALLCARDS[card-1]))
+            "{} showed {}.  OK?".format(pname, ALLCARDS[card-1]), 
+            default=True)
     if not confirm:
         abort_suggestion("User cancelled")
     return confirm
@@ -236,7 +245,8 @@ def get_response_other_suggested(query):
 
 def confirm_response_other_suggested(resp, pname):
     confirm = get_bool("{} {} a card. OK?"
-                       .format(pname, 'showed' if resp else 'did not show'))
+                       .format(pname, 'showed' if resp else 'did not show'),
+                       defaut = True)
     if not confirm:
         abort_suggestion("User cancelled")
     return confirm
@@ -267,7 +277,7 @@ def add_suggestion(players):
             print()
             print("Response from {}".format(player.name))
             if suggester.is_cpu:
-                card = get_response_cpu_suggested(query)
+                card = get_response_cpu_suggested(numquery)
                 if not confirm_response_cpu_suggested(card, player.name):
                     return
                 if card == False:
@@ -299,7 +309,8 @@ def get_player(players):
 
 def confirm_player(name, ncards, is_cpu):
     confirm = get_bool("Player is {}, {} cards, {}. OK?"
-                       .format(name, ncards, "CPU" if is_cpu else "not CPU"))
+                       .format(name, ncards, "CPU" if is_cpu else "not CPU"),
+                       default=True)
     if not confirm:
         abort_add_player("User cancelled")
     return confirm
@@ -315,7 +326,7 @@ def get_cpu_player_cards(ncards):
 
 def confirm_cpu_player_cards(cards):
     knowns = [ALLCARDS[i-1] for i in cards]
-    confirm = get_bool("Cards {}. OK?".format(knowns))
+    confirm = get_bool("Cards {}. OK?".format(knowns), default=True)
     if not confirm:
         abort_add_player("User cancelled")
     return confirm
@@ -344,7 +355,7 @@ def add_player(players):
 def delete_player(players):
     """ delete a player """
     confirm = get_bool("Are you sure you want to delete player {}"
-                       .format(current_player.name))
+                       .format(current_player.name), default=True)
     if not confirm:
         abort_delete_player("User cancelled")
         return
