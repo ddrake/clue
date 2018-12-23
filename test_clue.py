@@ -2,7 +2,7 @@ from clue import *
 from random import choice
 
 def query_to_set(query):
-    return set([query[0], 6 + query[1], 12 + query[2]])
+    return set(indices_to_all(query))
 
 def test_solve1():
     players = [ Player('Dow', 3, True,[0, 12, 19]), 
@@ -35,9 +35,6 @@ def test_solve1():
     assert found_solution(players), "No solution found"
     assert i == 5
 
-#TODO: Run this test with -s option to see that some probabilities go above 1
-# doesn't approach the correct solution even with many hints.
-# Probability computations need work...
 def test_solve2():
     players = [ Player('Dow', 3, True, [0, 12, 19]), 
                 Player('Tave', 4, False), 
@@ -71,7 +68,5 @@ def test_solve2():
                     r.update_for_yes(qset)
                 break
         if found_solution(players): break
-    assert not found_solution(players), "No solution found"
-    assert ('wrench', 4) in likely_solution(players), "Wrong possible solution"
-    assert ('study', 4) in likely_solution(players), "Wrong possible solution"
-    assert (('Ms White', 4) in likely_solution(players) or ('Ms White', 3) in likely_solution(players)), "Wrong possible solution"
+    assert query == (4,1,6)
+    assert definite_solution(players) == ['wrench', 'study', 'Ms White']

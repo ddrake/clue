@@ -1,3 +1,5 @@
+from itertools import product
+
 class atom:
     """ Represents an integer with an associated boolean value
     """
@@ -63,19 +65,9 @@ class tree:
         self.branches = [b for b in self.branches if not self.contr(b)]
 
     def clean(self):
-        """ Remove duplicate branches.  Then remove any branch 
-            that is a proper subset of another branch. 
+        """ Remove duplicate branches.  
         """
-        lst = [set(b) for b in set([tuple(b) for b in self.branches])]
-        self.branches = []
-        for i in range(len(lst)):
-            exclude = False
-            for j in range(len(lst)):
-                if lst[i] < lst[j]:
-                    exclude = True
-                    break
-            if not exclude:
-                self.branches.append(lst[i])
+        self.branches = [set(b) for b in set([tuple(b) for b in self.branches])]
 
     #---------------------------
     # Information about the tree

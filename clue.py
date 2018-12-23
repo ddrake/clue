@@ -1,7 +1,8 @@
 from logic_tree import *
 from menu import Menu
 import pickle
-
+from itertools import product
+from collections import Counter
 
 class Player:
     """ A class representing a player in the game Clue """
@@ -96,8 +97,7 @@ def get_list(prompt, n):
 def sync_players(players):
     """ manually synchronize using the fact that if a player has a card,
         the others don't """
-    for p in players:
-        for p1 in players:
+    for p, p1 in product(players, repeat=2):
             if p != p1:
                 for n in (p.hand.pos_elements() - p1.hand.neg_elements()):
                     p1.hand.add_neg([n])
@@ -106,19 +106,14 @@ def sync_players(players):
 def base_to_zero(nums):
     return [n-1 for n in nums]
 
-
-def all_query(nums):
-    """ change the indices of a query to index into ALLCARDS """
+def indices_to_all(nums):
+    """ change the indices of a zero-based query to index into ALLCARDS """
     s, w, r = nums
-    return [ALLCARDS.index(SUSPECTS[s-1]),
-            ALLCARDS.index(WEAPONS[w-1]),
-            ALLCARDS.index(ROOMS[r-1])]
-
+    return [s, w+len(SUSPECTS), r+len(SUSPECTS)+len(WEAPONS)]
 
 def text_query(nums):
-    s, w, r = nums
-    return [SUSPECTS[s-1], WEAPONS[w-1], ROOMS[r-1]]
-
+    """ get the names for a zero-based query """
+    return [ALLCARDS[i] for i in nums]
 
 def allcardset():
     """ a set containing all the cards """
@@ -171,7 +166,7 @@ def print_cards_in_categories():
 
 
 def print_all_cards():
-    """ used to as the CPU player to enter a card """
+    """ used to ask the CPU player to enter a card """
     for i, c in enumerate(ALLCARDS):
         print(i+1, c)
 
@@ -202,8 +197,8 @@ def confirm_suggester(suggester):
 def get_suggestion():
     print_cards_in_categories()
     numlist = get_list("Enter numbers for suggestion separated by spaces", 3)
-    numquery = all_query(numlist)
-    return numlist, numquery
+    numquery = indices_to_all(base_to_zero(numlist))
+    return numquery
 
 
 def confirm_suggestion(query):
@@ -262,9 +257,9 @@ def add_suggestion(players):
     if not confirm_suggester(suggester):
         return
 
-    numlist, numquery = get_suggestion()
-    query = text_query(numlist)
-    if not confirm_suggestion(query):
+    numquery = get_suggestion()
+    textquery = text_query(numquery)
+    if not confirm_suggestion(textquery):
         return
 
     responders = get_responders(players, suggester)
@@ -288,7 +283,7 @@ def add_suggestion(players):
                 else:
                     return
             else:
-                resp = get_response_other_suggested(query)
+                resp = get_response_other_suggested(textquery)
                 # if not confirm_response_other_suggested(resp, player.name):
                 #    return
                 if resp:
@@ -408,34 +403,14 @@ def likely_solution(players):
 
 
 def definite_solution_nums(players):
-    nset = set()
     none = [p.hand.neg_elements() for p in players]
-    if none:
-        nset = none[0]
-        for s in none:
-            nset = nset & s
-    return nset
+    return set.intersection(*none)
 
 
 def likely_solution_nums(players):
-    not_in_hand = [p.hand.neg_elements() for p in players]
-    d = {}
-    for sub in not_in_hand:
-        for n in sub:
-            d.setdefault(n, []).append(n)
-    knowns = [list(p.hand.pos_elements()) for p in players]
-    flat = set(n for sub in knowns for n in sub)
-    for n in flat:
-        if n in d:
-            d.pop(n)
-    return [(k, len(v)) for k, v in d.items()]
-
-
-def possible_solution_nums(players):
-    knowns = [list(p.hand.pos_elements()) for p in players]
-    knowns = set(k for lst in knowns for k in lst)
-    return allcardset() - knowns
-
+    not_in_hand = Counter(n for p in players for n in p.hand.neg_elements())
+    knowns = set(n for p in players for n in p.hand.pos_elements())
+    return [(k,v) for k, v in not_in_hand.items() if k not in knowns]
 
 def player_hands(players):
     for player in players:
