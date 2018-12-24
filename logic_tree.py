@@ -78,8 +78,8 @@ class tree:
             print(sorted(list(b), key=lambda b: b.num))
 
     def common_elements(self):
-        """ get a set of the atoms common to each branch """
-        return set.intersection(*self.branches) if self.branches else {}
+        """ get a set of the atoms common to all branches """
+        return set.intersection(*self.branches) if self.branches else set()
 
     def possibles(self):
         """ get a nested list representing the disjuctive part of the tree 
