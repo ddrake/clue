@@ -78,10 +78,11 @@ def get_int(prompt, allow_n=False, allowed=None):
         try:
             result = int(resp)
             if allowed and result not in allowed:
-                pass
+                pause("{} is not allowed".format(result))
+                continue
             return result
         except(ValueError):
-            pass
+            pause("not a valid number")
 
 
 def get_list(prompt, n, allowed=None):
@@ -89,15 +90,19 @@ def get_list(prompt, n, allowed=None):
     while True:
         resp = inp()
         result = resp.strip().split()
-        if len(result) == n:
-            try:
-                result = [int(x) for x in result]
-                if allowed: 
-                    if any(result[i] not in allowed[i] for i in range(n)):
-                        continue
-                return result
-            except(ValueError):
-                pass
+        if len(result) != n:
+            pause("expected {} numbers".format(n))
+            continue
+        try:
+            result = [int(x) for x in result]
+            if allowed:
+                if any(result[i] not in allowed[i] for i in range(n)):
+                    pause("some numbers were out of range")
+                    continue
+            return result
+        except(ValueError):
+            pause("{} is not a valid list of numbers".format(result))
+                
 
 
 def sync_players(players):
@@ -185,13 +190,7 @@ def get_suggester(players):
         print(i+1, p.name)
     pnum = get_int("Enter the player who made the suggestion", 
             allowed=range(1,len(players)+1))
-    try:
-        suggester = players[pnum-1]
-    except(IndexError) as err:
-        abort_suggestion("Invalid player number")
-        return None
-    return suggester
-
+    return players[pnum-1]
 
 def confirm_suggester(suggester):
     confirm = get_bool("Suggester is {}. OK?".format(suggester.name), 
@@ -220,11 +219,6 @@ def get_response_cpu_suggested(numquery):
     print_query_cards(numquery)
     cnum = get_int("Enter card shown or 'n' if none", allow_n=True, 
             allowed=[n+1 for n in numquery])
-    if cnum == False:
-        return False
-    if cnum < 1 or cnum > len(ALLCARDS):
-        abort_suggestion("Invalid card number")
-        return None
     return cnum
 
 
@@ -293,8 +287,6 @@ def add_suggestion(players):
                     return
             else:
                 resp = get_response_other_suggested(textquery)
-                # if not confirm_response_other_suggested(resp, player.name):
-                #    return
                 if resp:
                     player.update_for_yes(numquery)
                     break
@@ -323,7 +315,7 @@ def confirm_player(name, ncards, is_cpu):
 def get_cpu_player_cards(ncards):
     print_all_cards()
     result = get_list("Enter card numbers separated by spaces", ncards,
-            allowed=[ALLCARDS]*3)
+            allowed=[range(1, len(ALLCARDS)+1)]*ncards)
     if any(i for i in result if i <= 0 or i > len(ALLCARDS)):
         return None
     return result
