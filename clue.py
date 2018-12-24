@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from logic_tree import *
 from menu import Menu
 import pickle
@@ -58,8 +59,8 @@ def get_bool(prompt, default=None):
         else ' y|N' if default==False else ' y|n'
     print(prompt + deftext)
     resp = inp()
-    return True if resp.upper() == 'Y' or default==True \
-        else False if resp.upper() == 'N' or default==False \
+    return True if resp.upper() == 'Y' or (resp=='' and default==True) \
+        else False if resp.upper() == 'N' or (resp=='' and default==False) \
         else None
 
 
@@ -68,7 +69,7 @@ def get_string(prompt):
     return inp()
 
 
-def get_int(prompt, allow_n=False):
+def get_int(prompt, allow_n=False, allowed=None):
     print(prompt)
     while True:
         resp = inp()
@@ -76,12 +77,14 @@ def get_int(prompt, allow_n=False):
             return False
         try:
             result = int(resp)
+            if allowed and result not in allowed:
+                pass
             return result
         except(ValueError):
             pass
 
 
-def get_list(prompt, n):
+def get_list(prompt, n, allowed=None):
     print(prompt)
     while True:
         resp = inp()
@@ -89,6 +92,9 @@ def get_list(prompt, n):
         if len(result) == n:
             try:
                 result = [int(x) for x in result]
+                if allowed: 
+                    if any(result[i] not in allowed[i] for i in range(n)):
+                        continue
                 return result
             except(ValueError):
                 pass
@@ -109,7 +115,7 @@ def base_to_zero(nums):
 def indices_to_all(nums):
     """ change the indices of a zero-based query to index into ALLCARDS """
     s, w, r = nums
-    return [s, w+len(SUSPECTS), r+len(SUSPECTS)+len(WEAPONS)]
+    return [s, w+NS, r+NS+NW]
 
 def text_query(nums):
     """ get the names for a zero-based query """
@@ -177,7 +183,8 @@ def print_query_cards(query):
 def get_suggester(players):
     for i, p in enumerate(players):
         print(i+1, p.name)
-    pnum = get_int("Enter the player who made the suggestion")
+    pnum = get_int("Enter the player who made the suggestion", 
+            allowed=range(1,len(players)+1))
     try:
         suggester = players[pnum-1]
     except(IndexError) as err:
@@ -196,7 +203,8 @@ def confirm_suggester(suggester):
 
 def get_suggestion():
     print_cards_in_categories()
-    numlist = get_list("Enter numbers for suggestion separated by spaces", 3)
+    numlist = get_list("Enter numbers for suggestion separated by spaces", 3, 
+            allowed=[range(1, NS+1), range(1, NW+1), range(1, NR+1)])
     numquery = indices_to_all(base_to_zero(numlist))
     return numquery
 
@@ -210,7 +218,8 @@ def confirm_suggestion(query):
 
 def get_response_cpu_suggested(numquery):
     print_query_cards(numquery)
-    cnum = get_int("Enter card shown or 'n' if none", allow_n=True)
+    cnum = get_int("Enter card shown or 'n' if none", allow_n=True, 
+            allowed=[n+1 for n in numquery])
     if cnum == False:
         return False
     if cnum < 1 or cnum > len(ALLCARDS):
@@ -295,7 +304,7 @@ def add_suggestion(players):
 
 def get_player(players):
     name = get_string("Player name")
-    ncards = get_int("Number of cards")
+    ncards = get_int("Number of cards", allowed=range(1,10))
     is_cpu = False
     if len(players) == 0 or not any(p for p in players if p.is_cpu):
         is_cpu = get_bool("Is this player the CPU?")
@@ -313,7 +322,8 @@ def confirm_player(name, ncards, is_cpu):
 
 def get_cpu_player_cards(ncards):
     print_all_cards()
-    result = get_list("Enter card numbers separated by spaces", ncards)
+    result = get_list("Enter card numbers separated by spaces", ncards,
+            allowed=[ALLCARDS]*3)
     if any(i for i in result if i <= 0 or i > len(ALLCARDS)):
         return None
     return result
@@ -357,6 +367,7 @@ def delete_player(players):
     players.remove(current_player)
     set_player_options(players)
     set_main_options(players)
+    set_player_del_options(players)
     m_player_del.close()
 
 # ----------------------------------------
@@ -428,6 +439,7 @@ def load_players():
         players = pickle.load(f)
         set_player_options(players)
         set_main_options(players)
+        set_player_del_options(players)
         m_player_del.close()
         pause('Loaded from file')
 # ----------
@@ -487,6 +499,8 @@ WEAPONS = ['lead pipe', 'candlestick', 'rope', 'knife',
 ROOMS = ['hall', 'conservatory', 'library', 'dining room',
          'kitchen', 'billiard room', 'study', 'lounge', 'ball room']
 ALLCARDS = SUSPECTS + WEAPONS + ROOMS
+
+NS, NW, NR = len(SUSPECTS), len(WEAPONS), len(ROOMS)
 
 if __name__ == '__main__':
     players = []
