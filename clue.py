@@ -4,6 +4,7 @@ from menu import Menu
 import pickle
 from itertools import product
 from collections import Counter
+from random import choice, shuffle
 
 class Player:
     """ A class representing a player in the game Clue """
@@ -13,6 +14,7 @@ class Player:
         self.ncards = ncards
         self.is_cpu = is_cpu
         self.hand = tree()
+        self.true_hand = None
         if self.is_cpu:
             self.hand.add_neg(list(allcardset() - set(knowns)))
             for k in knowns:
@@ -294,6 +296,80 @@ def add_suggestion(players):
                     player.update_for_no(numquery)
 
 
+def automate(players, test_data=None, display=False):
+    """ Play a game automatically with provided data or random data for testing
+        
+        INPUTS
+        players - a list of player objects
+        data - a tuple of the following items:
+            true_hands - a list of tuples of indices into ALLCARDS
+                ordered the same as the players list
+                with the length of each tuple corresponding to player's ncards
+            true_solution - a three-tuple of indices into the three category lists
+                representing a suspect, a weapon and a room
+            suggestions - a list of three-tuples of indices into the three category
+                lists representing a suspect a weapon and a room
+
+        OUTPUTS
+        computed_solution, true_solution, suggestions_made
+    """
+    def get_query_triple():
+        return (choice(range(NS)), choice(range(NW)), choice(range(NR)))
+
+    def deal():
+        true_solution = get_query_triple()
+        ac = set(range(NS+NW+NR))
+        ac -= set(indices_to_all(true_solution))
+        ac = list(ac)
+        shuffle(ac)
+        for p in players:
+            p.true_hand = ac[:p.ncards]
+            ac = ac[p.ncards:]
+            assert len(p.true_hand) == p.ncards
+        return true_solution
+        
+    if test_data:
+        true_hands, true_solution, suggestions = test_data
+        for player, true_hand in zip(players, true_hands):
+            player.true_hand = true_hand
+    else:
+        true_solution = deal()
+        suggestions = [(i % len(players), get_query_triple()) for i in range(100)]
+        if display: 
+            print("True solution")
+            pause(str([SUSPECTS[true_solution[0]],
+                       WEAPONS[true_solution[1]],
+                       ROOMS[true_solution[2]]]))
+
+    for i, item in enumerate(suggestions):
+        pid, query = item
+        qset = set(indices_to_all(query))
+        suggester = players[pid]
+        if display: 
+            print()
+            pause("{}. {} suggested {}.".format(i+1, suggester.name, text_query(qset)))
+        responders = get_responders(players, suggester)
+        for r in responders:
+            isect = qset & set(r.true_hand)
+            if len(isect) == 0:
+                r.update_for_no(qset)
+                if display: 
+                    pause("{} had none.".format(r.name))
+            else:
+                if suggester.is_cpu:
+                    card = isect.pop()
+                    r.update_for_card(card)
+                    if display: 
+                        pause("{} showed {}.".format(r.name, ALLCARDS[card]))
+                else:
+                    r.update_for_yes(qset)
+                    if display: 
+                        pause("{} showed a card.".format(r.name))
+                break
+        if found_solution(players): break
+    return true_solution, definite_solution_nums(players), suggestions[:i+1]
+
+
 def get_player(players):
     name = get_string("Player name")
     ncards = get_int("Number of cards", allowed=range(1,10))
@@ -406,9 +482,12 @@ def likely_solution(players):
 
 
 def definite_solution_nums(players):
-    none = [p.hand.neg_elements() for p in players]
-    return set.intersection(*none)
-
+    likes = likely_solution_nums(players)
+    if len(likes) == 3:
+        return [k for k, v in likes]
+    else:
+        none = [p.hand.neg_elements() for p in players]
+        return set.intersection(*none)
 
 def likely_solution_nums(players):
     not_in_hand = Counter(n for p in players for n in p.hand.neg_elements())
@@ -455,6 +534,8 @@ def set_main_options(players):
                           lambda: print_likely_solution(players))
         m_main.add_option("Definite solution cards",
                           lambda: print_definite_solution(players))
+        m_main.add_option("Automate",
+                          lambda: automate(players, display=True))
     m_main.add_option("Manage Players", m_player.open)
 
 
@@ -479,7 +560,6 @@ def set_player_open_del(player):
     current_player = player
     print(player.name)
     m_player_del.open()
-
 
 # -------------
 # Main Program
