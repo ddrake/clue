@@ -339,7 +339,7 @@ def automate(players, test_data=None, display=False):
         suggestions = [(i % len(players), get_query_triple()) for i in range(100)]
         if display: 
             print("True solution")
-            pause(str([SUSPECTS[true_solution[0]],
+            print(str([SUSPECTS[true_solution[0]],
                        WEAPONS[true_solution[1]],
                        ROOMS[true_solution[2]]]))
 
@@ -349,25 +349,26 @@ def automate(players, test_data=None, display=False):
         suggester = players[pid]
         if display: 
             print()
-            pause("{}. {} suggested {}.".format(i+1, suggester.name, text_query(qset)))
+            print("{}. {} suggested {}.".format(i+1, suggester.name, text_query(qset)))
         responders = get_responders(players, suggester)
         for r in responders:
             isect = qset & set(r.true_hand)
             if len(isect) == 0:
                 r.update_for_no(qset)
                 if display: 
-                    pause("{} had none.".format(r.name))
+                    print("{} had none.".format(r.name))
             else:
                 if suggester.is_cpu:
                     card = isect.pop()
                     r.update_for_card(card)
                     if display: 
-                        pause("{} showed {}.".format(r.name, ALLCARDS[card]))
+                        print("{} showed {}.".format(r.name, ALLCARDS[card]))
                 else:
                     r.update_for_yes(qset)
                     if display: 
-                        pause("{} showed a card.".format(r.name))
+                        print("{} showed a card.".format(r.name))
                 break
+        pause()
         if found_solution(players): break
     return true_solution, definite_solution_nums(players), suggestions[:i+1]
 
@@ -478,15 +479,15 @@ def likely_solution(players):
     """ Return tuples of cards with the
         number of players who don't have them
     """
-    likes = likely_solution_nums(players)
-    return sorted([(ALLCARDS[n], ct) for n, ct in likes],
+    likely = likely_solution_nums(players)
+    return sorted([(ALLCARDS[n], ct) for n, ct in likely],
                   key=lambda tp: tp[1], reverse=True)
 
 
 def definite_solution_nums(players):
-    likes = likely_solution_nums(players)
-    if len(likes) == 3:
-        return [k for k, v in likes]
+    likely = likely_solution_nums(players)
+    if len(likely) == 3:
+        return [k for k, v in likely]
     else:
         none = [p.hand.neg_elements() for p in players]
         return set.intersection(*none)
