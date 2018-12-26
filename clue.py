@@ -47,6 +47,8 @@ class Player:
         poss = self.hand.possibles()
         return [[ALLCARDS[n] for n in sub] for sub in poss]
 
+
+
 # -----------
 # UI Helpers
 # -----------

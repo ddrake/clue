@@ -1,25 +1,14 @@
 from itertools import product
+from collections import namedtuple
 
-class atom:
+class atom(namedtuple('atom',['num','bval'])):
     """ Represents an integer with an associated boolean value
     """
-
-    def __init__(self, num, bval):
-        self.num = num
-        self.bval = bval
-
     def __str__(self):
         return '{}{}'.format('' if self.bval else '~', self.num)
 
     def __repr__(self):
-        return '({}, {})'.format(self.num, self.bval)
-
-    def __eq__(self, other):
-        return self.num == other.num and self.bval == other.bval
-
-    def __hash__(self):
-        return hash(str(self))
-
+        return '({},{})'.format(self.num, self.bval)
 
 class tree:
     """ A logic tree customized for use by the clue solver.
@@ -75,7 +64,7 @@ class tree:
 
     def print(self):
         for b in self.branches:
-            print(sorted(list(b), key=lambda b: b.num))
+            print(sorted(list(b), key=lambda a: a.num))
 
     def common_elements(self):
         """ get a set of the atoms common to all branches """
